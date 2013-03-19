@@ -1,0 +1,19 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+sdist
+build
+eggs
+develop-eggs
+
+# Installer logs
+pip-log.txt
+build.log
+.coverage
+.DS_Store
