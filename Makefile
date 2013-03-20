@@ -1,8 +1,8 @@
 test:
-	@nosetests --with-coverage ./tests/ -s --cover-package=dlint
+	@tox -e py27-1.5.x
 
-test_setup:
-	@pip install -r test_requirements.txt
+test_all:
+	tox
 
 upload:
 	@python setup.py sdist upload

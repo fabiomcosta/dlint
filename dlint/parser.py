@@ -4,6 +4,7 @@ from __future__ import unicode_literals, absolute_import
 from django.template.debug import DebugParser
 
 
+# TODO evaluate the use of Parser instead of DebugParser
 class Parser(DebugParser):
 
     last_library_loaded = None

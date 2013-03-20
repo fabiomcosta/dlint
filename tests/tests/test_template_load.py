@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 
 from django.template.base import TOKEN_BLOCK, TOKEN_VAR
 
+import sure  # noqa
 from mock import patch, Mock
 from dlint.finder import TemplateFinder
 

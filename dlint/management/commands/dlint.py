@@ -25,7 +25,6 @@ class Command(BaseCommand):
             # if any load_nodes
             # lets check for unused templatetags lib
             if load_tokens:
-                # TODO evaluate the use of Parser instead of DebugParser
                 parser = Parser(all_tokens)
 
                 loaded_tags = {}

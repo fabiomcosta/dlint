@@ -3,7 +3,7 @@
 from __future__ import unicode_literals, absolute_import
 
 from setuptools import setup, find_packages
-from .dlint import __version__
+from dlint import __version__
 
 
 setup(
