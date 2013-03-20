@@ -1,6 +1,6 @@
 # About
 
-Dlint checks for bad practices and wasted resources on django-specific code.
+dlint checks for bad practices and wasted resources on django-specific code.
 
 # Install
 
@@ -14,3 +14,5 @@ pip install dlint
 * add options for each check, similar to 2to3
 * make it possible to create new checks
 * The "resources" or "data" should all be lazy so they wont run if a check that dont use it wasnt made.
+* new checks:
+  * empty models.py files (not necessary till django 1.3? confirm)
