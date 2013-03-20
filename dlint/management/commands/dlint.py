@@ -122,10 +122,15 @@ class Command(BaseCommand):
                         unused_tags_in_lib = lib_content['tags'].intersection(unused_tags)
 
                         if (len(unused_filters_in_lib) + len(unused_tags_in_lib)) > 0:
-                            print '  {}:'.format(lib_name)
 
-                            for unused_filter in unused_filters_in_lib:
-                                print '    {}'.format(unused_filter)
+                            if unused_filters_in_lib == lib_content['filters'] and\
+                                    unused_tags_in_lib == lib_content['tags']:
+                                print '  [E] {} library is completely unused in the file.'.format(lib_name)
+                            else:
+                                print '  [W] some modules of {} are not used:'.format(lib_name)
 
-                            for unused_tag in unused_tags_in_lib:
-                                print '    {}'.format(unused_tag)
+                                for unused_filter in unused_filters_in_lib:
+                                    print '    [FILTER] {}'.format(unused_filter)
+
+                                for unused_tag in unused_tags_in_lib:
+                                    print '    [TAG] {}'.format(unused_tag)
