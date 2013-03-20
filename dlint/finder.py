@@ -25,6 +25,7 @@ class TemplateFinder(object):
     def template_source_loaders(self):
         if not hasattr(self, '_template_source_loaders') or\
                 loader.template_source_loaders is None:
+
             # initializes the template_loader.template_source_loaders property
             # https://github.com/django/django/blob/master/django/template/loader.py#L113
             try:
@@ -52,7 +53,19 @@ class TemplateFinder(object):
         for loader in self.template_source_loaders:
 
             if isinstance(loader, app_directories.Loader):
-                folders += app_directories.app_template_dirs
+
+                ignored_apps = settings.DLINT_IGNORED_APPS
+                ignored_app_paths = ['/{}/'.format(app.replace('.', '/')) for app in ignored_apps]
+
+                all_app_dirs = app_directories.app_template_dirs
+                app_dirs = []
+
+                for app_dir in all_app_dirs:
+                    if len([p for p in ignored_app_paths if p in app_dir]) > 0:
+                        continue
+                    app_dirs.append(app_dir)
+
+                folders += app_dirs
 
             elif isinstance(loader, filesystem.Loader):
                 folders += settings.TEMPLATE_DIRS

@@ -8,6 +8,10 @@ dlint checks for bad practices and wasted resources on django-specific code.
 pip install dlint
 ```
 
+# Settings
+
+* `DLINT_IGNORED_APPS` - will ignore these apps while running the static analisys.
+
 # TODO
 
 * show if none of the filters or tags from a loaded library are being used
