@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
+from collections import defaultdict
+
 from django.core.management.base import BaseCommand
 from django.template.defaulttags import load as load_tag
 from django.template.base import TOKEN_BLOCK, TOKEN_VAR, FilterExpression, TemplateSyntaxError
@@ -27,8 +29,17 @@ class Command(BaseCommand):
             if load_tokens:
                 parser = Parser(all_tokens)
 
-                loaded_tags = {}
-                loaded_filters = {}
+                # loaded_libs will be a dict like this:
+                # {
+                #   'library_name': {
+                #     'filters': set(),
+                #     'tags': set(),
+                #   },
+                #   ...
+                # }
+                loaded_libs = defaultdict(lambda: defaultdict(set))
+                loaded_filters = set()
+                loaded_tags = set()
 
                 for load_token in load_tokens:
                     try:
@@ -48,21 +59,22 @@ class Command(BaseCommand):
                     # {% load a b c from d.e %}
                     # {% load a.d %}
                     load_token_contents = load_token.contents.split()
-                    module_name = load_token_contents[-1]
+                    library_name = load_token_contents[-1]
 
-                    for f in last_library_loaded.filters.keys():
-                        loaded_filters[f] = module_name
+                    library_filters = last_library_loaded.filters.keys()
+                    library_tags = last_library_loaded.tags.keys()
 
-                    for t in last_library_loaded.tags.keys():
-                        loaded_tags[t] = module_name
+                    loaded_libs[library_name]['filters'].update(library_filters)
+                    loaded_libs[library_name]['tags'].update(library_tags)
 
-                print '{}:'.format(source)
+                    loaded_filters.update(library_filters)
+                    loaded_tags.update(library_tags)
 
                 unused_filters = set()
                 unused_tags = set()
 
                 # verify if a filter is not being used by this template
-                for filter_name, module in loaded_filters.items():
+                for filter_name in loaded_filters:
 
                     is_used = False
 
@@ -88,12 +100,8 @@ class Command(BaseCommand):
                     if not is_used:
                         unused_filters.add(filter_name)
 
-                print '  Unused Filters:'
-                for filter_name in unused_filters:
-                    print '    {} loaded from "{}"'.format(filter_name, loaded_filters[filter_name])
-
                 # verify if a tag is not being used by this template
-                for tag_name, module in loaded_tags.items():
+                for tag_name in loaded_tags:
 
                     is_used = False
 
@@ -105,6 +113,19 @@ class Command(BaseCommand):
                     if not is_used:
                         unused_tags.add(tag_name)
 
-                print '  Unused Tags:'
-                for tag_name in unused_tags:
-                    print '    {} loaded from "{}"'.format(tag_name, loaded_tags[tag_name])
+                if (len(unused_filters) + len(unused_tags)) > 0:
+                    print '{}:'.format(source)
+
+                    for lib_name, lib_content in loaded_libs.items():
+
+                        unused_filters_in_lib = lib_content['filters'].intersection(unused_filters)
+                        unused_tags_in_lib = lib_content['tags'].intersection(unused_tags)
+
+                        if (len(unused_filters_in_lib) + len(unused_tags_in_lib)) > 0:
+                            print '  {}:'.format(lib_name)
+
+                            for unused_filter in unused_filters_in_lib:
+                                print '    {}'.format(unused_filter)
+
+                            for unused_tag in unused_tags_in_lib:
+                                print '    {}'.format(unused_tag)

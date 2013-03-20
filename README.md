@@ -10,6 +10,9 @@ pip install dlint
 
 # TODO
 
+* show if none of the filters or tags from a loaded library are being used
+  * warning (yellow) for partially used loaded modules
+  * error (red) for unused modules
 * separate the print part of the command into a Report and make it an option
 * add options for each check, similar to 2to3
 * make it possible to create new checks
