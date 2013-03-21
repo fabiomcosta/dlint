@@ -55,7 +55,7 @@ class TemplateFinder(object):
             if isinstance(loader, app_directories.Loader):
 
                 ignored_apps = settings.DLINT_IGNORED_APPS
-                ignored_app_paths = [join(sep, app.replace('.', sep), sep) for app in ignored_apps]
+                ignored_app_paths = [(sep + app.replace('.', sep) + sep) for app in ignored_apps]
 
                 all_app_dirs = app_directories.app_template_dirs
                 app_dirs = []
