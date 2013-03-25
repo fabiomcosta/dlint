@@ -113,6 +113,10 @@ class Command(BaseCommand):
                     if not is_used:
                         unused_tags.add(tag_name)
 
+
+                # TODO make this an option, of course
+                show_warnings = False
+
                 if (len(unused_filters) + len(unused_tags)) > 0:
                     print '{}:'.format(source)
 
@@ -126,7 +130,7 @@ class Command(BaseCommand):
                             if unused_filters_in_lib == lib_content['filters'] and\
                                     unused_tags_in_lib == lib_content['tags']:
                                 print '  [E] {} library is completely unused in the file.'.format(lib_name)
-                            else:
+                            elif show_warnings:
                                 print '  [W] some modules of {} are not used:'.format(lib_name)
 
                                 for unused_filter in unused_filters_in_lib:
