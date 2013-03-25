@@ -8,26 +8,22 @@ from django.template.defaulttags import load as load_tag
 from django.template.base import TOKEN_BLOCK, TOKEN_VAR, FilterExpression, TemplateSyntaxError
 
 from dlint.finder import TemplateFinder
-from dlint.parser import Parser
 
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
         template_finder = TemplateFinder()
-        sources = template_finder.get_template_source_paths()
+        sources = template_finder.items()
 
-        print 'Found {} templates'.format(len(sources))
+        #print 'Found {} templates'.format(len(sources))
         print 'analysing unused load templatetag libraries...'
 
         for source in sources:
-            all_tokens = template_finder.get_template_tokens(source)
-            load_tokens = template_finder.get_load_template_tokens(source)
 
             # if any load_nodes
             # lets check for unused templatetags lib
-            if load_tokens:
-                parser = Parser(all_tokens)
+            if source.load_tokens:
 
                 # loaded_libs will be a dict like this:
                 # {
@@ -41,14 +37,14 @@ class Command(BaseCommand):
                 loaded_filters = set()
                 loaded_tags = set()
 
-                for load_token in load_tokens:
+                for load_token in source.load_tokens:
                     try:
-                        load_tag(parser, load_token)
+                        load_tag(source.parser, load_token)
                     except TemplateSyntaxError as e:
                         print 'Error while loading modules from {}'.format(source)
                         raise e
 
-                    last_library_loaded = parser.last_library_loaded
+                    last_library_loaded = source.parser.last_library_loaded
 
                     # since there is no secure way to get the
                     # templatetag module from the tag itself,
@@ -78,9 +74,9 @@ class Command(BaseCommand):
 
                     is_used = False
 
-                    for token in all_tokens:
+                    for token in source.tokens:
                         if token.token_type == TOKEN_VAR:
-                            filter_expression = FilterExpression(token.contents, parser)
+                            filter_expression = FilterExpression(token.contents, source.parser)
                             filter_functions_in_expression = [f[0] for f in filter_expression.filters]
 
                             # if TOKEN_VAR uses any filter
@@ -105,7 +101,7 @@ class Command(BaseCommand):
 
                     is_used = False
 
-                    for token in all_tokens:
+                    for token in source.tokens:
                         if token.token_type == TOKEN_BLOCK and token.contents.split()[0] == tag_name:
                             is_used = True
                             break
@@ -113,12 +109,11 @@ class Command(BaseCommand):
                     if not is_used:
                         unused_tags.add(tag_name)
 
-
                 # TODO make this an option, of course
                 show_warnings = False
 
                 if (len(unused_filters) + len(unused_tags)) > 0:
-                    print '{}:'.format(source)
+                    print '{}:'.format(source.source)
 
                     for lib_name, lib_content in loaded_libs.items():
 
@@ -127,9 +122,10 @@ class Command(BaseCommand):
 
                         if (len(unused_filters_in_lib) + len(unused_tags_in_lib)) > 0:
 
-                            if unused_filters_in_lib == lib_content['filters'] and\
+                            if unused_filters_in_lib == lib_content['filters'] and \
                                     unused_tags_in_lib == lib_content['tags']:
                                 print '  [E] {} library is completely unused in the file.'.format(lib_name)
+
                             elif show_warnings:
                                 print '  [W] some modules of {} are not used:'.format(lib_name)
 

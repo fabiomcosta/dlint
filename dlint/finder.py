@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 
 import codecs
 from os import walk
@@ -14,6 +14,9 @@ from django.template.loaders import (
     filesystem,
     #eggs,
 )
+from django.utils.functional import cached_property
+
+from dlint.parser import Parser
 
 
 class TemplateFinder(object):
@@ -21,21 +24,32 @@ class TemplateFinder(object):
     class LoaderNotSupportedException(Exception):
         pass
 
-    @property
+    @cached_property
+    def template_source_paths(self):
+        '''
+        returns a list with all the template file paths inside
+        the folders returned by `self.get_template_folders()`
+        '''
+        folders = self.get_template_folders()
+
+        sources = []
+
+        for folder in folders:
+            for root, dirs, files in walk(folder):
+                sources += [join(root, name) for name in files]
+
+        return sources
+
+    @cached_property
     def template_source_loaders(self):
-        if not hasattr(self, '_template_source_loaders') or\
-                loader.template_source_loaders is None:
+        # initializes the template_loader.template_source_loaders property
+        # https://github.com/django/django/blob/master/django/template/loader.py#L113
+        try:
+            loader.find_template('')
+        except TemplateDoesNotExist:
+            pass
 
-            # initializes the template_loader.template_source_loaders property
-            # https://github.com/django/django/blob/master/django/template/loader.py#L113
-            try:
-                loader.find_template('')
-            except TemplateDoesNotExist:
-                pass
-
-            self._template_source_loaders = loader.template_source_loaders
-
-        return self._template_source_loaders
+        return loader.template_source_loaders
 
     def get_template_folders(self):
         '''
@@ -75,34 +89,41 @@ class TemplateFinder(object):
 
         return folders
 
-    def get_template_source_paths(self):
-        '''
-        returns a list with all the template file paths inside
-        the folders returned by `self.get_template_folders()`
-        '''
-        folders = self.get_template_folders()
+    def items(self):
+        for source in self.template_source_paths:
+            yield Template(source)
 
-        sources = []
 
-        for folder in folders:
-            for root, dirs, files in walk(folder):
-                sources += [join(root, name) for name in files]
+class Template(object):
 
-        return sources
+    def __init__(self, source):
+        self.source = source
+        self.source_file = codecs.open(source, 'r', settings.FILE_CHARSET)
 
-    def get_template_tokens(self, source):
+    def __repr__(self):
+        return '<{module}.{name} source={source}>'.format(
+            module=self.__module__,
+            name=self.__class__.__name__,
+            source=self.source
+        )
+
+    @cached_property
+    def tokens(self):
         '''
-        returns a list of all the tokens in source.
+        returns a list with all the tokens in this template.
         '''
-        source_file = codecs.open(source, 'r', settings.FILE_CHARSET)
-        source_content = source_file.read()
+        source_content = self.source_file.read()
         lexer = DebugLexer(source_content, None)
         return lexer.tokenize()
 
-    def get_load_template_tokens(self, source):
+    @cached_property
+    def load_tokens(self):
         '''
-        returns a list of all the tokens from the load templatetag.
+        returns a list with all the load templatetag tokens in this template.
         '''
-        tokens = self.get_template_tokens(source)
-        return [t for t in tokens
+        return [t for t in self.tokens
             if t.token_type == TOKEN_BLOCK and t.contents.split()[0] == 'load']
+
+    @cached_property
+    def parser(self):
+        return Parser(self.tokens)
